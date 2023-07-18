@@ -4,15 +4,20 @@
 #include "common.h"
 
 #include <functional>
+#include <memory>
+
+class Cell;
 
 class Sheet : public SheetInterface {
 public:
-    ~Sheet();
+    ~Sheet() {}
 
     void SetCell(Position pos, std::string text) override;
 
-    const CellInterface* GetCell(Position pos) const override;
     CellInterface* GetCell(Position pos) override;
+    const CellInterface* GetCell(Position pos) const override;
+
+    CellInterface* GetOrCreateCell(Position pos);
 
     void ClearCell(Position pos) override;
 
@@ -21,14 +26,9 @@ public:
     void PrintValues(std::ostream& output) const override;
     void PrintTexts(std::ostream& output) const override;
 
-    const Cell* GetConcreteCell(Position pos) const;
-    Cell* GetConcreteCell(Position pos);
-
 private:
-    void MaybeIncreaseSizeToIncludePosition(Position pos);
-    void PrintCells(std::ostream& output,
-                    const std::function<void(const CellInterface&)>& printCell) const;
-    Size GetActualSize() const;
+    Size print_size_ = { 0, 0 }; // Размер печатной области таблицы. По умолчанию (0, 0)
+    Size fact_size_ = { 0, 0 }; // Фактический размер таблицы. По умолчанию (0, 0)
 
-    std::vector<std::vector<std::unique_ptr<Cell>>> cells_;
+    std::vector<std::vector<std::unique_ptr<Cell>>> table_; // Таблица
 };

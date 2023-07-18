@@ -1,3 +1,4 @@
+#include <limits>
 #include "common.h"
 #include "formula.h"
 #include "test_runner_p.h"
@@ -24,9 +25,6 @@ inline std::ostream& operator<<(std::ostream& output, const CellInterface::Value
 }
 
 namespace {
-std::string ToString(FormulaError::Category category) {
-    return std::string(FormulaError(category).ToString());
-}
 
 void TestPositionAndStringConversion() {
     auto testSingle = [](Position pos, std::string_view str) {
@@ -250,7 +248,7 @@ void TestErrorDiv0() {
 void TestEmptyCellTreatedAsZero() {
     auto sheet = CreateSheet();
     sheet->SetCell("A1"_pos, "=B2");
-    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), CellInterface::Value(0));
+    ASSERT_EQUAL(sheet->GetCell("A1"_pos)->GetValue(), CellInterface::Value(0.0));
 }
 
 void TestFormulaInvalidPosition() {
@@ -370,4 +368,31 @@ int main() {
     RUN_TEST(tr, TestCellReferences);
     RUN_TEST(tr, TestFormulaIncorrect);
     RUN_TEST(tr, TestCellCircularReferences);
+
+    {
+        auto sheet = CreateSheet();
+
+        sheet->SetCell("C1"_pos, "=123");
+        try {
+            sheet->SetCell("A1"_pos, "=A1");
+
+            std::cerr << "Something's wrong" << std::endl;
+            std::exit(1);
+        }
+        catch (CircularDependencyException&){
+            std::cerr << "OK" <<std::endl;
+        }
+
+        try {
+            sheet->SetCell("A1"_pos, "=C1+A1");
+
+            std::cerr << "Something's wrong" << std::endl;
+            std::exit(1);
+        }
+        catch (CircularDependencyException&){
+            std::cerr << "OK" <<std::endl;
+        }
+    }
+    
+    return 0;
 }

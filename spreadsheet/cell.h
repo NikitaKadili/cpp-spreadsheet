@@ -2,8 +2,10 @@
 
 #include "common.h"
 #include "formula.h"
+#include "sheet.h"
 
 #include <functional>
+#include <optional>
 #include <unordered_set>
 
 class Sheet;
@@ -21,6 +23,13 @@ public:
     std::vector<Position> GetReferencedCells() const override;
 
     bool IsReferenced() const;
+    bool IsEmpty() const;
+    bool IsCyclic(const std::vector<Position>& cells_to_check,
+        std::unordered_set<const Cell*>& visited_cells, const Cell* start) const;
+
+    void InvalidateCache();
+
+    void UpdateDepencies();
 
 private:
     class Impl;
@@ -30,7 +39,9 @@ private:
 
     std::unique_ptr<Impl> impl_;
 
-    // Добавьте поля и методы для связи с таблицей, проверки циклических 
-    // зависимостей, графа зависимостей и т. д.
+    Sheet& sheet_; // Ссылка на таблицу, в которой находится ячейка
 
+    mutable std::optional<Value> cache_; // Значение кэша текущей ячейки
+    std::unordered_set<Cell*> depends_on_current_; // Указатели на ячейки, которые зависят от текущей
+    std::unordered_set<Cell*> current_depends_on_; // Указатели на ячейки, от которых зависит текущая
 };
