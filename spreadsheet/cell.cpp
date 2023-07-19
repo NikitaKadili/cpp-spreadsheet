@@ -114,7 +114,7 @@ void Cell::Set(std::string text) {
         // Если ячейка содержит циклические зависимости 
         // - выбрасываем CircularDependencyException
         std::unordered_set<const Cell*> visited_cells;
-        if (IsCyclic(temp->GetReferencedCells(), visited_cells, this)) {
+        if (IsCyclic(temp->GetReferencedCells(), visited_cells)) {
             throw CircularDependencyException("Circular dependency detected");
         }
 
@@ -138,16 +138,7 @@ void Cell::Set(std::string text) {
  * Очищает ячейку (меняет тип ячейки на пустую)
 */
 void Cell::Clear() {
-    if (IsEmpty()) {
-        return;
-    }
-
-    impl_ = std::make_unique<EmptyImpl>();
-    
-    // Инвалидируем кэш в необходимых ячейках
-    InvalidateCache();
-    // Обновляем списки зависимостей
-    UpdateDepencies();
+    Set("");
 }
 
 /**
@@ -182,6 +173,13 @@ bool Cell::IsReferenced() const {
     return !current_depends_on_.empty();
 }
 /**
+ * Вовращает true, если имеются ячейки, которые зависят от текущей
+*/
+bool Cell::HasDependencies() const {
+    return !depends_on_current_.empty();
+}
+
+/**
  * Возвращает true, если ячейка пустая
 */
 bool Cell::IsEmpty() const {
@@ -191,14 +189,14 @@ bool Cell::IsEmpty() const {
  * Возвращает true, если граф связей ячейки содержит циклы
 */
 bool Cell::IsCyclic(const std::vector<Position>& cells_to_check,
-        std::unordered_set<const Cell*>& visited_cells, const Cell* start) const
+        std::unordered_set<const Cell*>& visited_cells) const
 {
     for (Position pos : cells_to_check) {
         const Cell* cell = reinterpret_cast<Cell*>(sheet_.GetCell(pos));
 
         // Если указатель на ячейку является указателем на начальную ячейку 
         // - возвращаем true
-        if (cell == start) {
+        if (cell == this) {
             return true;
         }
 
@@ -217,7 +215,7 @@ bool Cell::IsCyclic(const std::vector<Position>& cells_to_check,
 
         // Если метод ContainsCircularReferences для зависимостей cell 
         // вернул true - возвращаем также true
-        if (cell->IsCyclic(cell->GetReferencedCells(), visited_cells, start)) {
+        if (IsCyclic(cell->GetReferencedCells(), visited_cells)) {
             return true;
         }
     }

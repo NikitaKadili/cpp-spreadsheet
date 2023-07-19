@@ -119,7 +119,12 @@ void Sheet::ClearCell(Position pos) {
         return;
     }
 
-    table_[pos.row][pos.col] = nullptr;
+    table_[pos.row][pos.col].get()->Clear();
+
+    // Если ячейка не входит ни в один список зависимостей - удаляем ее
+    if (!table_[pos.row][pos.col].get()->HasDependencies()) {
+        table_[pos.row][pos.col] = nullptr;
+    }
 
     // Итерируемся по строкам, пока не найдем непустую строку
     for (; print_size_.rows > 0; --print_size_.rows) {

@@ -12,7 +12,7 @@ class Sheet;
 
 class Cell : public CellInterface {
 public:
-    Cell(Sheet& sheet);
+    explicit Cell(Sheet& sheet);
     ~Cell();
 
     void Set(std::string text);
@@ -23,9 +23,11 @@ public:
     std::vector<Position> GetReferencedCells() const override;
 
     bool IsReferenced() const;
+    bool HasDependencies() const;
+
     bool IsEmpty() const;
     bool IsCyclic(const std::vector<Position>& cells_to_check,
-        std::unordered_set<const Cell*>& visited_cells, const Cell* start) const;
+        std::unordered_set<const Cell*>& visited_cells) const;
 
     void InvalidateCache();
 
